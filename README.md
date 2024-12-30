@@ -7,6 +7,8 @@
 
 This project is a Python-based graphical application designed for analyzing and deconvoluting infrared (IR) spectra. Currently, the tool provides functionality for visualizing IR spectra provided by the user. The ultimate goal is to implement dynamic and precise deconvolution of absorption peaks, followed by analytical features for calculating cross-sections related to the formation and destruction of chemical species.
 
+![Screenshot of the main application window](icon_material/screenshot_application.png)
+
 ## Features
 
 1. Data Visualization: Users can load and plot IR spectrum data files.
