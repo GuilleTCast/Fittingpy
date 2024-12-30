@@ -27,8 +27,8 @@ This project is a Python-based graphical application designed for analyzing and 
     - numpy       -> version 1.26.4 (or higher)
     - matplotlib  -> version 3.9.0 (or higher)
 
-    > [!TIP]
-    > You could installed using `pip install numpy matplotlib`
+> [!TIP]
+> You could installed using `pip install numpy matplotlib`
 
 - Follow the steps to install the application
 
