@@ -25,25 +25,39 @@ class DataHandler:
         self.data_color = {}
         self.color_palettes = {}
 
-    def load_data(self, file_path):
+    def load_data(self, file_path) -> tuple[int, str]:
+        '''Load data from a file.
+        
+        Returns a tuple with:
+            header_lines (int): Number of header lines in the file.
+            delimiter (str): Delimiter used in the file.
+        '''
         delimiter = None
-        header = None
+        header_lines = 0
+
         with open(file_path, 'r') as f:
-            line = f.readline()
-            try:
-                delimiter = ','
-                _ = [float(i) for i in line.split(delimiter)]
-            except ValueError:
-                delimiter = '\t'
+            lines = f.readlines()
+            for i, line in enumerate(lines):
                 try:
-                    _ = [float(i) for i in line.split(delimiter)]
+                    _ = [float(value) for value in line.split()]
+                    delimiter = ',' if ',' in line else '\t'
+                    break
                 except ValueError:
-                    header = 0
+                    header_lines += 1
 
-        self.data_txt = np.loadtxt(file_path, delimiter=delimiter, skiprows=(1 if header is None else 0))
-        self.data_file = file_path
+        if delimiter is None:
+            raise ValueError('Delimiter not found')
+        
+        try:
+            self.data_txt = np.loadtxt(file_path, delimiter=delimiter, skiprows=header_lines)
+            self.data_file = file_path
+        except Exception as e:
+            raise ValueError(f'Failed to load data: {e}')
+        
+        return header_lines, delimiter
 
-    def generate_colors(self, palette, num_lines):
+    def generate_colors(self, palette, num_lines) -> None:
+        '''Generate colors for the lines in the plot.'''
         palettes = {
             'Red': {'Red': np.linspace(0, 1, num_lines), 'Green': np.zeros(num_lines), 'Blue': np.zeros(num_lines)},
             'Green': {'Red': np.zeros(num_lines), 'Green': np.linspace(0, 1, num_lines), 'Blue': np.zeros(num_lines)},
@@ -124,13 +138,18 @@ class Logger:
         with open(self.log_file, 'a') as f:
             timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             f.write(f'{timestamp}: {message}\n')
+
+    def log_wo_stamp(self, message):
+        '''Log a message to the file without timestamp.'''
+        with open(self.log_file, 'a') as f:
+            f.write(f'{message}\n')
         
     def log_start(self):
         '''Log the start of the application.'''
-        self.log('-' * 100)
+        self.log_wo_stamp('-' * 100)
         self.log('Application started')
 
     def log_end(self):
         '''Log the end of the application.'''
         self.log('Application finished')
-        self.log('-' * 100)
+        self.log_wo_stamp('-' * 100)
