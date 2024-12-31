@@ -37,7 +37,6 @@ class FitConfApp:
         self.plot_handler = PlotHandler()
         self.logger = Logger()
 
-        self.logger.log(f'\n{"-"*100}')
         self.logger.log_start()
 
         self.offset_var = DoubleVar(value=0)
@@ -93,12 +92,16 @@ class FitConfApp:
             return
 
         try:
-            self.data_handler.load_data(file_path)
+            header_lines, delimiter =self.data_handler.load_data(file_path)
             self.logger.log(f'File loaded: {file_path =}')
+            self.logger.log(f'{header_lines=} and {delimiter=}')
             messagebox.showinfo('File Loaded', f'{file_path.split("/")[-1]} loaded successfully.')
+            num_lines = self.data_handler.data_txt[:, 1:].shape[1]
+            self.data_handler.generate_colors(self.color_combobox.get(), num_lines)
             self.update_plot()
         except Exception as e:
-            self.logger.log(f'Failed to load file: {e}')
+            self.logger.log(f'Failed to load file: {file_path =}')
+            self.logger.log(f'Error: {e}')
             messagebox.showerror('Error', f'Failed to load file: {e}')
 
     def update_plot(self, *args):
@@ -117,6 +120,7 @@ class FitConfApp:
         num_lines = self.data_handler.data_txt[:, 1:].shape[1] if self.data_handler.data_txt is not None else 0
         self.data_handler.generate_colors(palette, num_lines)
         self.update_plot()
+        self.logger.log(f'Colors applied: {palette =}')
 
     def close_app(self):
         '''Clear the graph and closes the application.'''
