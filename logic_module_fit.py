@@ -25,7 +25,10 @@ class DataHandler:
         self.data_color = {}
         self.color_palettes = {}
 
-    def load_data(self, file_path) -> tuple[int, str]:
+    def version(self) -> str:
+        return 'DataHandler version: 0.0.1'
+
+    def load_file(self, file_path) -> tuple[int, str]:
         '''Load data from a file.
         
         Returns a tuple with:
@@ -39,8 +42,8 @@ class DataHandler:
             lines = f.readlines()
             for i, line in enumerate(lines):
                 try:
-                    _ = [float(value) for value in line.split()]
                     delimiter = ',' if ',' in line else '\t'
+                    _ = [float(value) for value in line.split(delimiter)]
                     break
                 except ValueError:
                     header_lines += 1
@@ -48,6 +51,17 @@ class DataHandler:
         if delimiter is None:
             raise ValueError('Delimiter not found')
         
+        return header_lines, delimiter
+
+    def load_data(self, file_path) -> tuple[int, str]:
+        '''Load data from a file.
+        
+        Returns a tuple with:
+            header_lines (int): Number of header lines in the file.
+            delimiter (str): Delimiter used in the file.
+        '''
+        header_lines, delimiter = self.load_file(file_path)
+
         try:
             self.data_txt = np.loadtxt(file_path, delimiter=delimiter, skiprows=header_lines)
             self.data_file = file_path
@@ -55,6 +69,28 @@ class DataHandler:
             raise ValueError(f'Failed to load data: {e}')
         
         return header_lines, delimiter
+    
+    def add_data(self, file_path) -> tuple[int, str]:
+        '''Add data from a file to the existing data.
+        
+        Returns a tuple with:
+            header_lines (int): Number of header lines in the file.
+            delimiter (str): Delimiter used in the file.
+        '''
+
+        if self.data_file is None:
+            raise ValueError('No data loaded yet')
+        
+        header_lines, delimiter = self.load_file(file_path)
+
+        try:
+            new_data_txt = np.loadtxt(file_path, delimiter=delimiter, skiprows=header_lines)
+            self.data_txt = np.concatenate((self.data_txt, new_data_txt[:,1:]), axis=1)
+            self.data_file = file_path
+        except Exception as e:
+            raise ValueError(f'Failed to load data: {e}')
+        
+        return header_lines, delimiter        
 
     def generate_colors(self, palette, num_lines) -> None:
         '''Generate colors for the lines in the plot.'''
@@ -90,14 +126,17 @@ class PlotHandler:
         self.lines = None
         self.setup_plot()
 
+    def version(self) -> str:
+        return 'PlotHandler version: 0.0.1'
+
     def setup_plot(self):
         '''Set up the plot.'''
         self.ax.invert_xaxis()
         self.ax.set_xlabel(r'Wavenumber (cm$^{-1}$)')
         self.ax.set_ylabel('Optical Depth')
-        self.fig.subplots_adjust(left=0.12, right=0.98, top=0.98, bottom=0.12)
+        self.fig.subplots_adjust(left=0.12, right=0.98, top=0.92, bottom=0.12)
 
-    def update_plot(self, data_txt, offset, colors=None):
+    def update_plot(self, data_txt, offset, title, colors=None):
         '''Update the plot with the data.'''
         self.ax.clear()
         x_data = data_txt[:, 0]
@@ -112,6 +151,7 @@ class PlotHandler:
                 color_line = (colors['Red'][i], colors['Green'][i], colors['Blue'][i])
                 line.set_color(color_line)
 
+        self.ax.set_title(title)
         self.ax.invert_xaxis()
         self.ax.set_xlabel(r'Wavenumber (cm$^{-1}$)')
         self.ax.set_ylabel('Optical Depth')
@@ -132,6 +172,9 @@ class Logger:
 
     def __init__(self, log_file='error.log'):
         self.log_file = log_file
+
+    def version(self) -> str:
+        return 'Logger version: 0.0.1'
 
     def log(self, message):
         '''Log a message to the file.'''
