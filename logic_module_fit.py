@@ -22,6 +22,7 @@ class DataHandler:
     def __init__(self):
         self.data_file = None
         self.data_txt = None
+        self.data_previous = None
         self.data_color = {}
         self.color_palettes = {}
 
@@ -86,6 +87,7 @@ class PlotHandler:
         self.fig: plt.Figure
         self.ax: plt.Axes
         self.fig, self.ax = plt.subplots()
+        self.fig.tight_layout()
         self.lines: plt.Line2D
         self.lines = None
         self.setup_plot()
@@ -97,8 +99,7 @@ class PlotHandler:
         self.ax.set_ylabel('Optical Depth')
         self.fig.subplots_adjust(left=0.12, right=0.98, top=0.98, bottom=0.12)
 
-    def update_plot(self, data_txt, offset, colors=None):
-        '''Update the plot with the data.'''
+    def plot_data(self, data_txt, offset, colors=None, *args, **kwargs):
         self.ax.clear()
         x_data = data_txt[:, 0]
         y_data = np.zeros([data_txt.shape[0], data_txt.shape[1] - 1])
@@ -116,6 +117,20 @@ class PlotHandler:
         self.ax.set_xlabel(r'Wavenumber (cm$^{-1}$)')
         self.ax.set_ylabel('Optical Depth')
         self.fig.canvas.draw()
+
+    def update_plot(self, data_txt, offset, colors=None, *args, **kwargs):
+        '''Update the plot with the data.'''
+
+        x_min, x_max = self.ax.get_xlim()
+        y_min, y_max = self.ax.get_ylim()
+
+        self.plot_data(data_txt, offset, colors)
+
+        self.ax.set_xlim(x_min, x_max)
+        self.ax.set_ylim(y_min, y_max)
+        self.fig.canvas.draw()
+
+        
 
 class Logger:
     '''
