@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
+from tkinter import simpledialog
 
 class DataHandler:
     '''
@@ -24,9 +25,14 @@ class DataHandler:
         self.data_txt = None
         self.data_color = {}
         self.color_palettes = {}
+        self.original_data = np.array([])
+        self.smooth_data = np.array([])
+        self.smooth_original = np.array([])
+        self.intensity_units = str()
+        self.data_baseline = np.array([])
 
     def version(self) -> str:
-        return 'DataHandler version: 0.0.1'
+        return 'DataHandler version: 0.1.2'
 
     def load_file(self, file_path) -> tuple[int, str]:
         '''Load data from a file.
@@ -35,6 +41,7 @@ class DataHandler:
             header_lines (int): Number of header lines in the file.
             delimiter (str): Delimiter used in the file.
         '''
+
         delimiter = None
         header_lines = 0
 
@@ -50,7 +57,7 @@ class DataHandler:
 
         if delimiter is None:
             raise ValueError('Delimiter not found')
-        
+
         return header_lines, delimiter
 
     def load_data(self, file_path) -> tuple[int, str]:
@@ -59,23 +66,27 @@ class DataHandler:
         Returns a tuple with:
             header_lines (int): Number of header lines in the file.
             delimiter (str): Delimiter used in the file.
+
         '''
         header_lines, delimiter = self.load_file(file_path)
 
         try:
             self.data_txt = np.loadtxt(file_path, delimiter=delimiter, skiprows=header_lines)
+            self.original_data = self.convert_data(self.data_txt)
+
             self.data_file = file_path
         except Exception as e:
             raise ValueError(f'Failed to load data: {e}')
         
         return header_lines, delimiter
     
-    def add_data(self, file_path) -> tuple[int, str]:
+    def add_data(self, file_path) -> tuple[int, str, str]:
         '''Add data from a file to the existing data.
         
         Returns a tuple with:
             header_lines (int): Number of header lines in the file.
             delimiter (str): Delimiter used in the file.
+
         '''
 
         if self.data_file is None:
@@ -85,12 +96,21 @@ class DataHandler:
 
         try:
             new_data_txt = np.loadtxt(file_path, delimiter=delimiter, skiprows=header_lines)
-            self.data_txt = np.concatenate((self.data_txt, new_data_txt[:,1:]), axis=1)
+            new_data_converted = self.convert_data(new_data_txt)
+            if new_data_converted.shape[0] != self.original_data.shape[0]:
+                raise ValueError('New data has different number of lines than the original data')
+            
+            self.data_txt = np.column_stack((self.data_txt, new_data_converted[:,1:]))
+            self.original_data = np.column_stack((self.original_data, new_data_converted[:,1:]))
             self.data_file = file_path
         except Exception as e:
             raise ValueError(f'Failed to load data: {e}')
         
-        return header_lines, delimiter        
+        return header_lines, delimiter
+    
+    def convert_data_txt(self, data) -> np.ndarray:
+        data_converted = self.convert_data(data)
+        return data_converted
 
     def generate_colors(self, palette, num_lines) -> None:
         '''Generate colors for the lines in the plot.'''
@@ -101,6 +121,32 @@ class DataHandler:
             'Thermometer': {'Red': np.linspace(0, 1, num_lines), 'Green': np.zeros(num_lines), 'Blue': np.linspace(1, 0, num_lines)}
         }
         self.data_color = palettes.get(palette, palettes['Thermometer'])
+
+    def convert_data(self, data) -> np.ndarray:
+        '''Convert the data to the format needed for the plot.'''
+        x_data = np.array(data[:, 0])
+        y_data = np.array(data[:, 1:])
+
+        
+        factor = 1
+        intensity_unit = self.intensity_units.upper()
+
+        if intensity_unit == 'ABSORBANCE':
+            # absorbance to optical depth
+            factor = np.log(10)
+        elif intensity_unit == 'TRANSMITTANCE':
+            # transmittance to optical depth
+            factor = -np.log(10)
+        elif intensity_unit == 'OPTICAL DEPTH':
+            # transmittance to optical depth
+            factor = 1
+
+        y_data = np.array(y_data) * factor
+
+        print(f'Shape of x_data: {x_data.shape}')
+        print(f'Shape of y_data: {y_data.shape}')
+
+        return np.column_stack((x_data, y_data))
 
 class PlotHandler:
     '''
@@ -127,7 +173,7 @@ class PlotHandler:
         self.setup_plot()
 
     def version(self) -> str:
-        return 'PlotHandler version: 0.0.1'
+        return 'PlotHandler version: 0.0.2'
 
     def setup_plot(self):
         '''Set up the plot.'''
@@ -136,7 +182,7 @@ class PlotHandler:
         self.ax.set_ylabel('Optical Depth')
         self.fig.subplots_adjust(left=0.12, right=0.98, top=0.92, bottom=0.12)
 
-    def update_plot(self, data_txt, offset, title, colors=None):
+    def update_plot(self, data_txt, offset, title, colors=None, intensity_units: str='OPTICAL DEPTH'):
         '''Update the plot with the data.'''
         self.ax.clear()
         x_data = data_txt[:, 0]
