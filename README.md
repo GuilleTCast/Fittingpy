@@ -32,9 +32,10 @@ This project is a Python-based graphical application designed for analyzing and 
 - Required Python libraries:
     - numpy       -> version 1.26.4 (or higher)
     - matplotlib  -> version 3.9.0 (or higher)
+    - scipy       -> version 1.17.1 (or higher)
 
 > [!TIP]
-> You could installed using `pip install numpy matplotlib`
+> You could installed using `pip install numpy matplotlib scipy` or `pip install -r requirements.txt` provided file.
 
 - Follow the steps to install the application
     1. Clone the Repository
@@ -79,7 +80,7 @@ Any issues during execution will be logged in error.log in the current working d
 
 ## Features Under Development
 
-- Dynamic Peak Deconvolution: Algorithms for deconvoluting overlapping absorption peaks.
+- Dynamic Peak Deconvolution: Algorithms for deconvolute overlapping absorption peaks.
 - Cross-Section Analysis: Calculations for formation and destruction cross-sections of related species.
 
 # Contributing
